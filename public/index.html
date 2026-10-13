@@ -1,221 +1,445 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secret Chat</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-    .container { width: 100%; max-width: 450px; background: #1e1e1e; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    input, button { padding: 10px; margin: 5px 0; border-radius: 6px; border: none; outline: none; }
-    input[type="text"], input[type="password"] { width: calc(100% - 22px); background: #2a2a2a; color: #fff; }
-    button { background: #007bff; color: white; cursor: pointer; font-weight: bold; }
-    #chat-box { height: 300px; border: 1px solid #333; overflow-y: auto; padding: 10px; border-radius: 6px; background: #181818; margin-bottom: 10px; display: flex; flex-direction: column; }
-    .msg { margin: 5px 0; padding: 8px 12px; border-radius: 8px; max-width: 80%; word-break: break-word; }
-    .sent { background: #005c4b; align-self: flex-end; }
-    .received { background: #202c33; align-self: flex-start; }
-    .controls { display: flex; gap: 5px; align-items: center; }
-    img, audio { max-width: 100%; border-radius: 6px; margin-top: 5px; }
-    #call-bar { display: none; background: #28a745; padding: 10px; text-align: center; border-radius: 6px; margin-bottom: 10px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080912">
+<title>Secret Chat — Private Space</title>
+<style>
+:root{
+  --bg:#070810;--panel:#10121e;--panel2:#151829;--line:rgba(255,255,255,.09);
+  --text:#f4f5ff;--muted:#9298b4;--purple:#9b5cff;--blue:#38bdf8;
+  --green:#32d6a0;--danger:#ff5376;--radius:20px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+body{min-height:100vh;overflow-x:hidden;background:
+ radial-gradient(ellipse at 12% 5%,rgba(119,53,220,.18),transparent 34%),
+ radial-gradient(ellipse at 88% 88%,rgba(26,135,220,.13),transparent 35%),#070810}
+button,input{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.hidden{display:none!important}
+.brand-mark{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(135deg,#a855f7,#4f46e5 58%,#06b6d4);box-shadow:0 0 28px #854dff44}
+.brand-mark svg{width:25px;height:25px}
+.brand-name{font-weight:800;letter-spacing:.2px;font-size:17px}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:1.4px;text-transform:uppercase}
+.muted{color:var(--muted)}
+/* Animated join screen */
+#setup-screen{min-height:100vh;display:grid;place-items:center;padding:28px 18px;position:relative;isolation:isolate;overflow:hidden}
+.ambient{position:absolute;z-index:-1;border-radius:50%;filter:blur(3px);opacity:.55;pointer-events:none;animation:float 11s ease-in-out infinite alternate}
+.ambient.one{width:330px;height:330px;left:-100px;top:7%;background:radial-gradient(circle,#7139d877,transparent 70%)}
+.ambient.two{width:420px;height:420px;right:-130px;bottom:-80px;background:radial-gradient(circle,#087dbb66,transparent 70%);animation-delay:-4s}
+.ambient.three{width:230px;height:230px;right:18%;top:-120px;background:radial-gradient(circle,#b23d9b44,transparent 70%);animation-delay:-7s}
+@keyframes float{from{transform:translate3d(0,-10px,0) scale(.95)}to{transform:translate3d(25px,28px,0) scale(1.08)}}
+.login-card{width:min(100%,440px);padding:clamp(25px,5vw,42px);border:1px solid rgba(255,255,255,.13);border-radius:28px;background:linear-gradient(145deg,rgba(22,23,41,.92),rgba(10,12,22,.9));box-shadow:0 28px 90px #0008,0 0 60px #8b5cf61a;backdrop-filter:blur(20px);animation:cardIn .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:34px}
+.login-emblem{width:74px;height:74px;margin:0 auto 22px;border-radius:25px;display:grid;place-items:center;background:linear-gradient(135deg,#a855f7,#4f46e5 60%,#0891b2);box-shadow:0 0 55px #8b5cf644;animation:glow 3s ease-in-out infinite alternate}
+.login-emblem svg{width:39px;height:39px}
+@keyframes glow{from{box-shadow:0 0 24px #8b5cf633}to{box-shadow:0 0 58px #8b5cf677}}
+.login-card h1{text-align:center;font-size:clamp(26px,6vw,34px);letter-spacing:-1px;margin:0 0 10px}
+.login-card .intro{text-align:center;color:var(--muted);font-size:14px;line-height:1.65;margin:0 auto 28px;max-width:300px}
+.field{margin:16px 0}
+.field label{display:block;color:#d7d9ea;font-size:12px;font-weight:700;margin:0 0 9px;letter-spacing:.6px}
+.field-wrap{position:relative}
+.field-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#8c91b1;display:grid;place-items:center}
+.field-icon svg{width:18px;height:18px}
+.field input{width:100%;height:51px;padding:0 14px 0 44px;border:1px solid var(--line);border-radius:13px;background:#090b15c9;color:var(--text);outline:none;transition:border .2s,box-shadow .2s}
+.field input::placeholder{color:#656b86}
+.field input:focus{border-color:#9560f5;box-shadow:0 0 0 4px #8b5cf61c}
+.primary-btn{width:100%;height:51px;border:0;border-radius:13px;color:white;font-weight:800;background:linear-gradient(100deg,#8b5cf6,#6366f1 55%,#0891b2);box-shadow:0 9px 25px #6d43e533;transition:transform .2s,filter .2s;margin-top:10px}
+.primary-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.secure-note{display:flex;align-items:center;justify-content:center;gap:8px;color:#8f96b3;font-size:11px;margin-top:22px}
+.secure-note svg{width:14px;height:14px;color:var(--green)}
+/* Chat shell */
+#chat-screen{height:100dvh;min-height:560px;padding:18px;display:grid;grid-template-columns:78px minmax(0,1fr);gap:16px;max-width:1600px;margin:auto}
+.sidebar{border:1px solid var(--line);border-radius:22px;background:rgba(13,15,27,.9);display:flex;align-items:center;flex-direction:column;padding:16px 10px;gap:12px;box-shadow:0 15px 55px #0003}
+.side-brand{margin:0 0 22px}
+.nav-btn{width:48px;height:48px;border:1px solid transparent;border-radius:15px;background:transparent;color:#9298b4;display:grid;place-items:center;position:relative;transition:.2s}
+.nav-btn svg{width:21px;height:21px}
+.nav-btn:hover{background:#ffffff0a;color:white}
+.nav-btn.active{color:white;background:linear-gradient(145deg,#8b5cf633,#4f46e533);border-color:#a78bfa42;box-shadow:inset 0 0 20px #8b5cf611}
+.nav-btn.active:before{content:"";position:absolute;left:-11px;width:3px;height:22px;border-radius:0 4px 4px 0;background:linear-gradient(#c084fc,#38bdf8)}
+.sidebar-spacer{flex:1}
+.nav-btn.leave{color:#ff7c96}
+.workspace{min-width:0;min-height:0;display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:16px}
+.conversations,.chat-panel{border:1px solid var(--line);border-radius:22px;background:rgba(13,15,27,.88);min-width:0;min-height:0;overflow:hidden}
+.conversations{display:flex;flex-direction:column;padding:22px 16px}
+.list-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}
+.list-heading h2{font-size:21px;letter-spacing:-.5px;margin:0}
+.online-pill{font-size:10px;display:flex;align-items:center;gap:6px;color:#7fe4bd;background:#32d6a012;padding:7px 9px;border-radius:99px;white-space:nowrap}
+.online-pill:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.search-box{height:42px;display:flex;align-items:center;gap:9px;padding:0 12px;background:#080a14;border:1px solid var(--line);border-radius:12px;margin-bottom:19px;color:#8289a7}
+.search-box svg{width:17px;height:17px;flex:0 0 auto}
+.search-box input{width:100%;border:0;outline:0;background:transparent;color:white;font-size:12px;min-width:0}
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#707794;margin:2px 0 12px}
+.room-card{display:flex;align-items:center;gap:12px;padding:13px 10px;border:1px solid #a78bfa30;border-radius:15px;background:linear-gradient(110deg,#8b5cf619,#0891b20b);min-width:0}
+.room-avatar{width:43px;height:43px;display:grid;place-items:center;flex:0 0 43px;border-radius:14px;color:#e9ddff;background:linear-gradient(135deg,#8b5cf6,#2563eb)}
+.room-avatar svg{width:22px;height:22px}
+.room-info{min-width:0;flex:1}
+.room-info strong{font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-info small{font-size:11px;color:var(--muted);display:block;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-tag{font-size:9px;color:#bfa4ff;border:1px solid #a78bfa40;padding:5px 6px;border-radius:7px}
+.empty-hint{margin:auto 6px 0;padding:15px 13px;border:1px dashed #ffffff18;border-radius:14px;color:#8289a5;font-size:11px;line-height:1.6}
+.empty-hint strong{color:#c4c7dd;display:block;margin-bottom:5px}
+.chat-panel{display:flex;flex-direction:column;background:linear-gradient(155deg,rgba(17,19,34,.96),rgba(9,11,20,.96))}
+.chat-header{display:flex;align-items:center;gap:12px;padding:17px 22px;border-bottom:1px solid var(--line);min-height:82px}
+.chat-header .room-avatar{width:45px;height:45px}
+.header-copy{min-width:0;flex:1}
+.header-copy strong{display:block;font-size:14px;overflow-wrap:anywhere}
+.header-copy small{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;margin-top:5px}
+.header-copy small:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green)}
+.header-actions{display:flex;gap:8px}
+.action-btn{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;color:#c5c9e0;background:#ffffff05;transition:.2s}
+.action-btn:hover{color:white;background:#8b5cf622;border-color:#a78bfa55}
+.action-btn svg{width:18px;height:18px}
+#call-bar{display:none;margin:12px 20px 0;padding:10px 13px;align-items:center;justify-content:space-between;gap:10px;border:1px solid #32d6a044;border-radius:12px;background:#32d6a010;color:#9ef1d0;font-size:12px}
+#call-bar button{border:0;background:#ff5376;color:white;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:800}
+#chat-box{flex:1;min-height:0;overflow-y:auto;padding:24px clamp(14px,3vw,34px);display:flex;flex-direction:column;gap:11px;scroll-behavior:smooth}
+#chat-box::-webkit-scrollbar{width:5px}
+#chat-box::-webkit-scrollbar-thumb{background:#35364f;border-radius:9px}
+.welcome-message{align-self:center;text-align:center;max-width:330px;margin:auto;padding:28px 12px;color:#8c92ae}
+.welcome-icon{width:60px;height:60px;margin:0 auto 15px;border:1px solid #a78bfa3d;border-radius:20px;background:linear-gradient(135deg,#8b5cf61c,#0891b21a);display:grid;place-items:center;color:#c4b5fd}
+.welcome-icon svg{width:28px;height:28px}
+.welcome-message strong{display:block;color:#dce0f5;font-size:14px;margin-bottom:8px}
+.welcome-message p{font-size:12px;line-height:1.7;margin:0}
+.msg{max-width:min(76%,560px);width:fit-content;padding:11px 14px;border-radius:16px;font-size:13px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 4px 12px #0002}
+.sent{align-self:flex-end;background:linear-gradient(135deg,#6842bd,#4353a9);border:1px solid #bda1ff2b;border-bottom-right-radius:5px;color:#fff}
+.received{align-self:flex-start;background:#1a1d2d;border:1px solid #ffffff0d;border-bottom-left-radius:5px;color:#e9eaf7}
+.msg img,.msg audio{display:block;max-width:100%;border-radius:10px;margin-top:4px}
+.msg img{max-height:300px;object-fit:contain}
+.composer-wrap{padding:13px 18px 17px;border-top:1px solid var(--line);background:#0b0d18b8}
+.composer-tools{display:flex;align-items:center;gap:8px}
+.composer{min-width:0;flex:1;display:flex;align-items:center;gap:8px;background:#171a2a;border:1px solid #ffffff10;border-radius:15px;padding:5px 6px 5px 15px;transition:border .2s}
+.composer:focus-within{border-color:#8b5cf65c}
+.composer input{flex:1;min-width:0;height:38px;border:0;outline:0;background:transparent;color:white;font-size:13px}
+.composer input::placeholder{color:#777e9a}
+.send-btn{width:39px;height:39px;border:0;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#4f46e5);color:white;box-shadow:0 5px 15px #6d43e533}
+.send-btn svg{width:18px;height:18px}
+.composer-caption{font-size:10px;color:#666d88;margin:10px 3px 0;display:flex;justify-content:space-between;gap:10px}
+#file-input{display:none}
+.mobile-brand{display:none}
+@media(max-width:980px){
+ #chat-screen{grid-template-columns:64px minmax(0,1fr);padding:12px;gap:12px}
+ .workspace{grid-template-columns:240px minmax(0,1fr);gap:12px}
+ .conversations{padding:17px 12px}
+ .chat-header{padding:14px 16px}
+}
+@media(max-width:720px){
+ #chat-screen{height:100dvh;min-height:0;padding:0;display:flex;flex-direction:column;gap:0}
+ .sidebar{order:2;flex:0 0 auto;flex-direction:row;justify-content:space-around;border-radius:0;border:0;border-top:1px solid var(--line);padding:7px 10px max(7px,env(safe-area-inset-bottom));gap:4px;background:#0b0d18f5}
+ .side-brand{display:none}
+ .nav-btn{width:43px;height:43px;border-radius:13px}
+ .nav-btn.active:before{left:50%;top:-8px;transform:translateX(-50%);width:20px;height:3px;border-radius:0 0 4px 4px}
+ .sidebar-spacer{display:none}
+ .workspace{flex:1;min-height:0;display:flex;gap:0}
+ .conversations{display:none}
+ .chat-panel{border:0;border-radius:0;flex:1}
+ .chat-header{min-height:72px;padding:12px 14px}
+ #chat-box{padding:18px 13px}
+ .composer-wrap{padding:10px 11px 12px}
+ .composer-caption{font-size:9px}
+ .header-actions{gap:5px}
+ .action-btn{width:37px;height:37px}
+ .msg{max-width:86%;font-size:13px}
+}
+@media(max-width:380px){
+ .brand-name{font-size:15px}
+ .login-card{padding:24px 20px}
+ .header-actions .action-btn{width:33px;height:33px}
+ .chat-header{gap:8px}
+ .room-avatar{width:39px;height:39px;flex-basis:39px}
+ .composer-tools{gap:5px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition:none!important}}
+</style>
 </head>
 <body>
-
-<div class="container">
-  <h2>🔒 Secret Chat</h2>
-  
-  <div id="setup-screen">
-    <input type="text" id="room" placeholder="Enter Room Name">
-    <input type="password" id="key" placeholder="Enter Shared Secret Key">
-    <button onclick="joinRoom()">Join Chat</button>
+<!-- Original socket.io server endpoint is retained. -->
+<section id="setup-screen">
+  <div class="ambient one"></div><div class="ambient two"></div><div class="ambient three"></div>
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6v5c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V6l8-3Z"/><path d="M8 10.5a4 4 0 0 1 8 0c0 2-2 2.5-2 4h-4c0-1.5-2-2-2-4Z"/><path d="M10 17h4"/></svg></div>
+      <div><div class="brand-name">Secret Chat</div><div class="brand-sub">Your private space</div></div>
+    </div>
+    <div class="login-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6v5c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V6l8-3Z"/><path d="M8 11a4 4 0 0 1 8 0c0 2-2 2.5-2 4h-4c0-1.5-2-2-2-4Z"/><path d="M10 17h4"/></svg></div>
+    <h1>Enter your private space</h1>
+    <p class="intro">A quieter place for your conversations. Enter your room details to connect.</p>
+    <form id="join-form">
+      <div class="field"><label for="room">ROOM NAME</label><div class="field-wrap"><span class="field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 9h10M7 13h6"/></svg></span><input id="room" type="text" placeholder="Enter a room name" autocomplete="off" required maxlength="100"></div></div>
+      <div class="field"><label for="key">SHARED SECRET CODE</label><div class="field-wrap"><span class="field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3"/></svg></span><input id="key" type="password" placeholder="Enter your secret code" autocomplete="current-password" required maxlength="200"></div></div>
+      <button class="primary-btn" type="submit">Enter Secret Chat&nbsp; ↗</button>
+    </form>
+    <div class="secure-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg> Private room experience · Never share your secret code</div>
   </div>
+</section>
 
-  <div id="chat-screen" style="display:none;">
-    <div id="call-bar">
-      <span>📞 Voice Call Connected</span>
-      <button onclick="endCall()" style="background:red;">End</button>
-    </div>
+<section id="chat-screen" class="hidden">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand-mark side-brand" title="Secret Chat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6v5c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V6l8-3Z"/><path d="M8 11a4 4 0 0 1 8 0c0 2-2 2.5-2 4h-4c0-1.5-2-2-2-4Z"/></svg></div>
+    <button class="nav-btn active" aria-label="Chat" title="Chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4H12a8 8 0 0 1 8 7.5Z"/><path d="M8 11h8M8 14h5"/></svg></button>
+    <button class="nav-btn" id="nav-call" aria-label="Voice call" title="Voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 11.2 19a19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7.1 10.4a16 16 0 0 0 6 6l1.9-1.9a2 2 0 0 1 1.8-.6l3 .5a2 2 0 0 1 2.2 2.5Z"/></svg></button>
+    <button class="nav-btn" id="nav-photo" aria-label="Send photo" title="Send photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></button>
+    <div class="sidebar-spacer"></div>
+    <button class="nav-btn leave" id="leave-room" aria-label="Leave room" title="Leave room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></button>
+  </aside>
 
-    <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
-      <button onclick="startCall()">📞 Call</button>
-      <button onclick="document.getElementById('file-input').click()">📷 Photo</button>
-      <button id="rec-btn" onclick="toggleRecord()">🎤 Record</button>
-    </div>
+  <main class="workspace">
+    <aside class="conversations">
+      <div class="list-heading"><h2>Messages</h2><span class="online-pill">Private</span></div>
+      <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="room-search" placeholder="Find in this space…" aria-label="Search room"></div>
+      <div class="section-label">Your conversation</div>
+      <div class="room-card"><div class="room-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 20 6v5c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V6l8-3Z"/><path d="M8 11a4 4 0 0 1 8 0c0 2-2 2.5-2 4h-4c0-1.5-2-2-2-4Z"/></svg></div><div class="room-info"><strong id="room-name-display">Private Room</strong><small>Shared secret enabled</small></div><span class="room-tag">ROOM</span></div>
+      <div class="empty-hint"><strong>Just you and your people.</strong>Share the room name and secret code only with the person you want to connect with.</div>
+    </aside>
 
-    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="sendImage(event)">
-    <audio id="remote-audio" autoplay></audio>
-
-    <div id="chat-box"></div>
-
-    <div class="controls">
-      <input type="text" id="message" placeholder="Type message or emoji...">
-      <button onclick="sendText()">Send</button>
-    </div>
-  </div>
-</div>
+    <section class="chat-panel" aria-label="Chat conversation">
+      <header class="chat-header">
+        <div class="room-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 20 6v5c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V6l8-3Z"/><path d="M8 11a4 4 0 0 1 8 0c0 2-2 2.5-2 4h-4c0-1.5-2-2-2-4Z"/></svg></div>
+        <div class="header-copy"><strong id="header-room-name">Private Room</strong><small>Room connected · share details carefully</small></div>
+        <div class="header-actions">
+          <button class="action-btn" id="header-call" aria-label="Start voice call" title="Voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 11.2 19a19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7.1 10.4a16 16 0 0 0 6 6l1.9-1.9a2 2 0 0 1 1.8-.6l3 .5a2 2 0 0 1 2.2 2.5Z"/></svg></button>
+          <button class="action-btn" id="header-photo" aria-label="Send photo" title="Send photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></button>
+        </div>
+      </header>
+      <div id="call-bar"><span>● Voice call active</span><button onclick="endCall()">End call</button></div>
+      <audio id="remote-audio" autoplay></audio>
+      <div id="chat-box" aria-live="polite">
+        <div class="welcome-message" id="welcome-message"><div class="welcome-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 20 6v5c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V6l8-3Z"/><path d="M8 11a4 4 0 0 1 8 0c0 2-2 2.5-2 4h-4c0-1.5-2-2-2-4Z"/></svg></div><strong>Your private conversation starts here</strong><p>Send a message, share a photo or start a voice call. Messages will appear in this space.</p></div>
+      </div>
+      <div class="composer-wrap">
+        <div class="composer-tools">
+          <button class="action-btn" id="composer-photo" aria-label="Attach photo" title="Attach photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg></button>
+          <button class="action-btn" id="rec-btn" aria-label="Record audio" title="Record audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></button>
+          <div class="composer"><input type="text" id="message" placeholder="Write a private message…" autocomplete="off" aria-label="Message"><button class="send-btn" id="send-btn" aria-label="Send message" title="Send message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button></div>
+        </div>
+        <div class="composer-caption"><span>Keep your secret code private.</span><span>Secret Chat · Private space</span></div>
+      </div>
+    </section>
+  </main>
+  <input type="file" id="file-input" accept="image/*">
+</section>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  const socket = io();
-  let roomId, secretKey, peerConnection, localStream;
-  let isRecording = false, mediaRecorder, audioChunks = [];
+'use strict';
+const socket = io();
+let roomId, secretKey, peerConnection, localStream;
+let isRecording = false, mediaRecorder, audioChunks = [];
+let pendingCandidates = [];
+const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-  const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+function xorEncrypt(text, key) {
+  // DEMO ONLY: XOR is not secure encryption. Replace with authenticated encryption before real use.
+  const input = new TextEncoder().encode(text);
+  const keyBytes = new TextEncoder().encode(key);
+  const output = input.map((byte, i) => byte ^ keyBytes[i % keyBytes.length]);
+  let binary = '';
+  output.forEach(byte => binary += String.fromCharCode(byte));
+  return btoa(binary);
+}
+function xorDecrypt(cipher, key) {
+  try {
+    const binary = atob(cipher);
+    const input = Uint8Array.from(binary, char => char.charCodeAt(0));
+    const keyBytes = new TextEncoder().encode(key);
+    const output = input.map((byte, i) => byte ^ keyBytes[i % keyBytes.length]);
+    return new TextDecoder().decode(output);
+  } catch { return '⚠️ Decryption error'; }
+}
 
-  function xorEncrypt(text, key) {
-    let result = '';
-    for (let i = 0; i < text.length; i++) {
-      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-    }
-    return btoa(result);
+document.getElementById('join-form').addEventListener('submit', joinRoom);
+function joinRoom(event) {
+  if (event) event.preventDefault();
+  roomId = document.getElementById('room').value.trim();
+  secretKey = document.getElementById('key').value;
+  if (!roomId || !secretKey) return alert('Enter both the room name and secret code.');
+  socket.emit('join-room', roomId);
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('chat-screen').classList.remove('hidden');
+  document.getElementById('room-name-display').textContent = roomId;
+  document.getElementById('header-room-name').textContent = roomId;
+  document.getElementById('message').focus();
+}
+function appendMsg(content, type, mediaType = '') {
+  const box = document.getElementById('chat-box');
+  const welcome = document.getElementById('welcome-message');
+  if (welcome) welcome.remove();
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  if (mediaType === 'image') {
+    const img = document.createElement('img');
+    img.alt = 'Shared image';
+    img.src = content;
+    div.appendChild(img);
+  } else if (mediaType === 'audio') {
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = content;
+    div.appendChild(audio);
+  } else {
+    div.textContent = content;
   }
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function sendText() {
+  const msgInput = document.getElementById('message');
+  const value = msgInput.value;
+  if (!value.trim() || !secretKey || !roomId) return;
+  const encrypted = xorEncrypt(value, secretKey);
+  socket.emit('send-message', { roomId, data: encrypted, type: 'text' });
+  appendMsg(value, 'sent');
+  msgInput.value = '';
+  msgInput.focus();
+}
+document.getElementById('send-btn').addEventListener('click', sendText);
+document.getElementById('message').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } });
 
-  function xorDecrypt(cipher, key) {
+function openPhotoPicker() { document.getElementById('file-input').click(); }
+['nav-photo','header-photo','composer-photo'].forEach(id => document.getElementById(id).addEventListener('click', openPhotoPicker));
+document.getElementById('file-input').addEventListener('change', sendImage);
+function sendImage(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('Please choose an image smaller than 5 MB.'); e.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function() {
+    const encrypted = xorEncrypt(reader.result, secretKey);
+    socket.emit('send-message', { roomId, data: encrypted, type: 'image' });
+    appendMsg(reader.result, 'sent', 'image');
+    e.target.value = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('rec-btn').addEventListener('click', toggleRecord);
+async function toggleRecord() {
+  const btn = document.getElementById('rec-btn');
+  if (!isRecording) {
     try {
-      let text = atob(cipher);
-      let result = '';
-      for (let i = 0; i < text.length; i++) {
-        result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-      }
-      return result;
-    } catch { return "⚠️ Decryption Error"; }
-  }
-
-  function joinRoom() {
-    roomId = document.getElementById('room').value;
-    secretKey = document.getElementById('key').value;
-    if (!roomId || !secretKey) return alert("Fill all fields");
-    socket.emit('join-room', roomId);
-    document.getElementById('setup-screen').style.display = 'none';
-    document.getElementById('chat-screen').style.display = 'block';
-  }
-
-  function appendMsg(content, type, isMedia = false) {
-    const box = document.getElementById('chat-box');
-    const div = document.createElement('div');
-    div.className = `msg ${type}`;
-    if (isMedia) div.innerHTML = content;
-    else div.textContent = content;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function sendText() {
-    const msgInput = document.getElementById('message');
-    if (!msgInput.value) return;
-    const encrypted = xorEncrypt(msgInput.value, secretKey);
-    socket.emit('send-message', { roomId, data: encrypted, type: 'text' });
-    appendMsg(msgInput.value, 'sent');
-    msgInput.value = '';
-  }
-
-  function sendImage(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function() {
-      const encrypted = xorEncrypt(reader.result, secretKey);
-      socket.emit('send-message', { roomId, data: encrypted, type: 'image' });
-      appendMsg(`<img src="${reader.result}">`, 'sent', true);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function toggleRecord() {
-    const btn = document.getElementById('rec-btn');
-    if (!isRecording) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
-      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.ondataavailable = e => { if (e.data.size) audioChunks.push(e.data); };
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
         const reader = new FileReader();
         reader.onload = () => {
           const encrypted = xorEncrypt(reader.result, secretKey);
           socket.emit('send-message', { roomId, data: encrypted, type: 'audio' });
-          appendMsg(`<audio controls src="${reader.result}"></audio>`, 'sent', true);
+          appendMsg(reader.result, 'sent', 'audio');
         };
         reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
       };
       mediaRecorder.start();
       isRecording = true;
-      btn.textContent = "🛑 Stop";
-    } else {
-      mediaRecorder.stop();
-      isRecording = false;
-      btn.textContent = "🎤 Record";
-    }
+      btn.classList.add('recording');
+      btn.style.color = '#ff5376';
+      btn.title = 'Stop recording';
+      btn.setAttribute('aria-label','Stop recording');
+    } catch (err) { alert('Microphone access was not available. Allow microphone permission and try again.'); }
+  } else {
+    mediaRecorder.stop();
+    isRecording = false;
+    btn.classList.remove('recording');
+    btn.style.color = '';
+    btn.title = 'Record audio';
+    btn.setAttribute('aria-label','Record audio');
   }
+}
+socket.on('receive-message', ({ data, type }) => {
+  const decrypted = xorDecrypt(data, secretKey);
+  if (type === 'text') appendMsg(decrypted, 'received');
+  else if (type === 'image' && decrypted.startsWith('data:image/')) appendMsg(decrypted, 'received', 'image');
+  else if (type === 'audio' && decrypted.startsWith('data:audio/')) appendMsg(decrypted, 'received', 'audio');
+});
 
-  socket.on('receive-message', ({ data, type }) => {
-    const decrypted = xorDecrypt(data, secretKey);
-    if (type === 'text') appendMsg(decrypted, 'received');
-    else if (type === 'image') appendMsg(`<img src="${decrypted}">`, 'received', true);
-    else if (type === 'audio') appendMsg(`<audio controls src="${decrypted}"></audio>`, 'received', true);
-  });
-
-  // --- WebRTC Voice Call Logic ---
-  async function startCall() {
+// WebRTC voice calling. The server must relay call-made, answer-made, ice-candidate and call-ended events.
+async function configurePeer() {
+  peerConnection = new RTCPeerConnection(rtcConfig);
+  if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) socket.emit('ice-candidate', { roomId, candidate: e.candidate });
+  };
+  peerConnection.ontrack = e => {
+    document.getElementById('remote-audio').srcObject = e.streams[0];
+  };
+  peerConnection.onconnectionstatechange = () => {
+    if (peerConnection && ['failed','disconnected','closed'].includes(peerConnection.connectionState)) {
+      if (peerConnection.connectionState !== 'disconnected') closeCall();
+    }
+  };
+}
+async function startCall() {
+  try {
+    if (peerConnection) closeCall();
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    peerConnection = new RTCPeerConnection(rtcConfig);
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-    peerConnection.onicecandidate = e => {
-      if (e.candidate) socket.emit('ice-candidate', { roomId, candidate: e.candidate });
-    };
-
-    peerConnection.ontrack = e => {
-      document.getElementById('remote-audio').srcObject = e.streams[0];
-    };
-
+    await configurePeer();
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     socket.emit('call-user', { roomId, signal: offer });
-    document.getElementById('call-bar').style.display = 'block';
-  }
-
-  socket.on('call-made', async ({ signal }) => {
-    if (confirm("Incoming Audio Call. Accept?")) {
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      peerConnection = new RTCPeerConnection(rtcConfig);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-      peerConnection.onicecandidate = e => {
-        if (e.candidate) socket.emit('ice-candidate', { roomId, candidate: e.candidate });
-      };
-
-      peerConnection.ontrack = e => {
-        document.getElementById('remote-audio').srcObject = e.streams[0];
-      };
-
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      socket.emit('make-answer', { roomId, signal: answer });
-      document.getElementById('call-bar').style.display = 'block';
-    }
-  });
-
-  socket.on('answer-made', async ({ signal }) => {
+    document.getElementById('call-bar').style.display = 'flex';
+  } catch (err) { alert('Could not start the call. Check microphone permission and make sure you use HTTPS or localhost.'); }
+}
+document.getElementById('nav-call').addEventListener('click', startCall);
+document.getElementById('header-call').addEventListener('click', startCall);
+socket.on('call-made', async ({ signal }) => {
+  if (!confirm('Incoming audio call. Accept?')) { socket.emit('end-call', roomId); return; }
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    await configurePeer();
     await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
-  });
-
-  socket.on('ice-candidate', async candidate => {
-    if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-  });
-
-  function endCall() {
-    socket.emit('end-call', roomId);
-    closeCall();
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('make-answer', { roomId, signal: answer });
+    document.getElementById('call-bar').style.display = 'flex';
+    for (const c of pendingCandidates) await peerConnection.addIceCandidate(new RTCIceCandidate(c));
+    pendingCandidates = [];
+  } catch (err) { alert('Could not accept the call. Check microphone permission.'); closeCall(); }
+});
+socket.on('answer-made', async ({ signal }) => {
+  if (peerConnection) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+    for (const c of pendingCandidates) await peerConnection.addIceCandidate(new RTCIceCandidate(c));
+    pendingCandidates = [];
   }
-
-  socket.on('call-ended', closeCall);
-
-  function closeCall() {
-    if (peerConnection) peerConnection.close();
-    document.getElementById('call-bar').style.display = 'none';
-  }
+});
+socket.on('ice-candidate', async candidate => {
+  if (peerConnection && peerConnection.remoteDescription) {
+    try { await peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) { console.error('ICE candidate error', e); }
+  } else pendingCandidates.push(candidate);
+});
+function endCall() { socket.emit('end-call', roomId); closeCall(); }
+socket.on('call-ended', closeCall);
+function closeCall() {
+  if (peerConnection) { peerConnection.ontrack = null; peerConnection.close(); peerConnection = null; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  document.getElementById('remote-audio').srcObject = null;
+  document.getElementById('call-bar').style.display = 'none';
+  pendingCandidates = [];
+}
+document.getElementById('leave-room').addEventListener('click', () => {
+  if (peerConnection || localStream) endCall();
+  if (roomId) socket.emit('leave-room', roomId);
+  roomId = null; secretKey = null;
+  document.getElementById('chat-screen').classList.add('hidden');
+  document.getElementById('setup-screen').classList.remove('hidden');
+  document.getElementById('room').value = '';
+  document.getElementById('key').value = '';
+  document.getElementById('chat-box').replaceChildren();
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome-message'; welcome.id = 'welcome-message';
+  welcome.innerHTML = '<div class="welcome-icon">🔒</div><strong>Your private conversation starts here</strong><p>Send a message, share a photo or start a voice call. Messages will appear in this space.</p>';
+  document.getElementById('chat-box').appendChild(welcome);
+});
+document.getElementById('room-search').addEventListener('input', e => {
+  const card = document.querySelector('.room-card');
+  card.style.display = card.textContent.toLowerCase().includes(e.target.value.toLowerCase()) ? 'flex' : 'none';
+});
 </script>
 </body>
 </html>
